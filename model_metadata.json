@@ -1,0 +1,48 @@
+{
+  "model_name": "TMEM120A_RBF_SVR_931",
+  "algorithm": "Support Vector Regression",
+  "kernel": "RBF",
+  "descriptor_sources": [
+    "RDKit 2D",
+    "Mordred 2D"
+  ],
+  "raw_rdkit_descriptor_count": 217,
+  "clean_rdkit_descriptor_count": 183,
+  "raw_mordred_descriptor_count": 1613,
+  "clean_mordred_descriptor_count": 1343,
+  "combined_descriptor_count": 1526,
+  "final_descriptor_count": 931,
+  "correlation_filter_threshold": 0.98,
+  "training_compounds": 607,
+  "independent_test_compounds": 202,
+  "original_dataset_size": 809,
+  "model_parameters": {
+    "C": 8,
+    "gamma": 0.0003,
+    "epsilon": 0.4
+  },
+  "test_metrics": {
+    "R2": 0.635731,
+    "RMSE": 0.575239,
+    "MAE": 0.462447,
+    "Pearson": 0.797468,
+    "Spearman": 0.686368
+  },
+  "category_thresholds_kcal_mol": {
+    "VERY_GOOD": "< -6.45",
+    "GOOD": "-6.45 to < -5.70",
+    "MEDIUM": "-5.70 to < -4.945",
+    "POOR": ">= -4.945"
+  },
+  "pipeline": [
+    "SMILES",
+    "RDKit + Mordred descriptors",
+    "descriptor preprocessing",
+    "931 selected descriptors",
+    "StandardScaler",
+    "RBF-SVR",
+    "predicted docking score"
+  ],
+  "intended_use": "Rapid TMEM120A docking-score estimation and candidate prioritization",
+  "warning": "QSAR-based docking-score estimate; not a replacement for explicit molecular docking or experimental validation"
+}
