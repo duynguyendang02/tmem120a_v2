@@ -279,19 +279,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.expander("About the RBF-SVR model"):
-    left, right = st.columns([1.45, 1])
-    with left:
+target_name = "TMEM120A"
+
+# Initialize input once so sidebar example buttons can safely update it.
+if "smiles_input" not in st.session_state:
+    st.session_state["smiles_input"] = "CC(=O)Nc1ccc(O)cc1"
+
+def use_example_smiles(example_smiles: str) -> None:
+    st.session_state["smiles_input"] = example_smiles
+
+with st.sidebar:
+    st.markdown("### Model & guide")
+
+    with st.expander("About the RBF-SVR model", expanded=False):
         st.markdown(
             "The model was developed from **809 compounds** with reference TMEM120A docking scores. "
             "RDKit and Mordred 2D descriptors were calculated, preprocessed, and reduced to **931 retained features**. "
-            "The final predictor uses a **StandardScaler → radial-basis-function support vector regression (RBF-SVR)** pipeline."
+            "The final predictor uses a **StandardScaler → RBF-SVR** pipeline."
         )
         st.markdown(
             '<div class="model-flow">SMILES → RDKit + Mordred → 1,526 descriptors → correlation filtering → 931 features → StandardScaler → RBF-SVR → predicted docking score</div>',
             unsafe_allow_html=True,
         )
-    with right:
         st.markdown(
             "**Final model**  \n"
             "C = 8 · γ = 0.0003 · ε = 0.40  \n"
@@ -299,33 +308,53 @@ with st.expander("About the RBF-SVR model"):
             "R² = 0.6357 · RMSE = 0.5752 kcal/mol  \n"
             "MAE = 0.4624 kcal/mol · Spearman = 0.6864"
         )
-        st.caption("The predicted score is a QSAR-based estimate for prioritization, not a replacement for explicit docking or experimental validation.")
+        st.caption(
+            "QSAR-based docking-score estimation for rapid prioritization; "
+            "not a replacement for explicit docking or experimental validation."
+        )
 
-with st.expander("How to use this platform"):
-    st.markdown(
-        "**1. Input a molecule** — enter a SMILES string or draw a structure.  \n"
-        "**2. Run analysis** — the platform calculates RDKit/Mordred descriptors and maps the retained 931 model features.  \n"
-        "**3. Predict** — standardized features are evaluated by the final RBF-SVR model.  \n"
-        "**4. Review** — inspect the docking-score estimate, applicability flag, 2D/3D structure, physicochemical profile, drug-likeness filters, and nearest training analogue.  \n"
-        "**5. Export** — download the molecular analysis as CSV."
-    )
+    with st.expander("How to use", expanded=False):
+        st.markdown(
+            "**1. Input** — enter a SMILES string or draw a molecule.  \n"
+            "**2. Analyze** — calculate RDKit/Mordred descriptors and map the 931 retained features.  \n"
+            "**3. Predict** — run StandardScaler and RBF-SVR inference.  \n"
+            "**4. Review** — inspect docking-score estimate, applicability, molecular properties, drug-likeness, and nearest training analogue.  \n"
+            "**5. Export** — download results as CSV."
+        )
 
+    st.markdown("### Example molecules")
+    st.caption("Click an example to load its SMILES into the predictor.")
 
-target_name = "TMEM120A"
-with st.sidebar:
-    st.markdown("**Example SMILES**")
-    st.code("CC(=O)Nc1ccc(O)cc1", language=None)
-    st.caption("Paracetamol")
-    st.code("CCN(CC)CC(=O)Nc1c(C)cccc1C", language=None)
-    st.caption("Lidocaine")
-    st.code("CC(C)c1cccc(C(C)C)c1O", language=None)
-    st.caption("Propofol")
+    examples = {
+        "Paracetamol": "CC(=O)Nc1ccc(O)cc1",
+        "Lidocaine": "CCN(CC)CC(=O)Nc1c(C)cccc1C",
+        "Propofol": "CC(C)c1cccc(C(C)C)c1O",
+        "Caffeine": "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
+        "Taxol (Paclitaxel)": "CC(=O)O[C@H]1C(=O)[C@@]2(C)C([C@H](OC(=O)c3ccccc3)[C@]3(O)C[C@H](OC(=O)[C@H](O)[C@@H](NC(=O)c4ccccc4)c4ccccc4)C(C)=C1C3(C)C)[C@]1(OC(C)=O)CO[C@@H]1C[C@H]2O",
+    }
+
+    for name, example_smiles in examples.items():
+        st.button(
+            name,
+            key=f"example_{name}",
+            use_container_width=True,
+            on_click=use_example_smiles,
+            args=(example_smiles,),
+        )
+
+    with st.expander("Show example SMILES", expanded=False):
+        for name, example_smiles in examples.items():
+            st.markdown(f"**{name}**")
+            st.code(example_smiles, language=None)
+        st.caption(
+            "Large or structurally unusual molecules such as Taxol may be flagged as OUT OF DOMAIN; "
+            "this is an intended behavior of the applicability guard."
+        )
 
 smiles_tab, draw_tab = st.tabs(["Enter SMILES", "Draw molecule"])
 with smiles_tab:
     smiles = st.text_area(
         "Input SMILES",
-        value="CC(=O)Nc1ccc(O)cc1",
         height=100,
         placeholder="e.g. CC(=O)Nc1ccc(O)cc1",
         key="smiles_input",
