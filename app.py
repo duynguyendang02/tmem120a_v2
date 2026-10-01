@@ -24,6 +24,21 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
+    button, input, textarea, select, label, p, li, table {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        letter-spacing: -0.025em;
+        font-weight: 700;
+    }
+    code, pre, .statusline, .model-flow, .pstep .num, .pstep .state {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+    }
     .block-container { padding-top: 2.2rem; padding-bottom: 2rem; max-width: 1450px; }
     .hero {
         border: 1px solid rgba(56,189,248,.22);
@@ -32,8 +47,8 @@ st.markdown(
         background: linear-gradient(135deg, rgba(14,165,233,.09), rgba(99,102,241,.05));
         margin-bottom: 1.2rem;
     }
-    .hero-title { font-size: 2rem; font-weight: 760; letter-spacing: -0.02em; margin-bottom: .2rem; }
-    .hero-sub { color: #8b95a7; font-size: 1.02rem; margin-bottom: .85rem; }
+    .hero-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.035em; margin-bottom: .2rem; }
+    .hero-sub { color: #8b95a7; font-size: 1rem; line-height: 1.55; margin-bottom: .85rem; }
     .badges { display: flex; gap: .45rem; flex-wrap: wrap; }
     .badge {
         display: inline-block; padding: .27rem .58rem; border-radius: 999px;
@@ -380,10 +395,25 @@ if st.button("Run molecular analysis", type="primary", use_container_width=True)
     )
 
     with st.expander("Model context and nearest training analogue"):
-        st.write(f"Nearest-training Morgan Tanimoto similarity: **{prediction.nearest_training_similarity:.3f}**")
-        st.write(f"Nearest training docking score: **{prediction.nearest_training_docking_score:.3f} kcal/mol**")
-        st.code(prediction.nearest_training_smiles, language=None)
-        st.caption("Structural similarity is provided as context only and is not a calibrated confidence score.")
+        analogue_info, analogue_structure = st.columns([1.15, 1], gap="large")
+        with analogue_info:
+            st.markdown("**Nearest compound in the training set**")
+            st.write(f"Morgan Tanimoto similarity: **{prediction.nearest_training_similarity:.3f}**")
+            st.write(f"Reference docking score: **{prediction.nearest_training_docking_score:.3f} kcal/mol**")
+            st.markdown("**Training SMILES**")
+            st.code(prediction.nearest_training_smiles, language=None)
+            st.caption("Structural similarity is provided as context only and is not a calibrated confidence score.")
+        with analogue_structure:
+            st.markdown("**2D structure of nearest training analogue**")
+            analogue_mol = Chem.MolFromSmiles(prediction.nearest_training_smiles or "")
+            if analogue_mol is not None:
+                AllChem.Compute2DCoords(analogue_mol)
+                st.image(
+                    Draw.MolToImage(analogue_mol, size=(520, 320)),
+                    use_container_width=True,
+                )
+            else:
+                st.info("A valid 2D structure could not be generated for the nearest training analogue.")
 
     viewer_col, profile_col = st.columns([1.55, 1], gap="large")
     with viewer_col:
